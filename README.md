@@ -44,7 +44,7 @@ Components:
 - Temperature (°F) drives fan speed  
 - CO₂ levels adjust damper position and minimum ventilation  
 - Occupancy includes a **30-second hold timer** after last motion  
-- Environmental data is streamed as structured JSON every 2 seconds  
+- Environmental data is streamed as structured JSON every 5 seconds  
 
 ---
 
@@ -52,7 +52,7 @@ Components:
 
 - Arduino Uno  
 - IRLZ44N MOSFET + flyback diode (fan output)  
-- MG90S/SG90 or similar servo (damper)  
+- MG90S/SG90  servo (damper)  
 - BME280 (I²C)  
 - T6613 CO₂ module (UART)  
 - PIR sensor module  
@@ -71,7 +71,7 @@ The primary controller firmware:
 - Outputs JSON structured data  
 - Drives fan + damper + LED  
 
-📌 See: `firmware/primary_controller/` (to be added)
+📌 See: `firmware/primary_controller.ino`
 
 ---
 
@@ -104,11 +104,11 @@ Example output:
 A Python script is included for capturing serial JSON data to a `.jsonl` file.  
 This will feed into the Pi Zero dashboard in a later phase.
 
-📌 See: `tools/logger.py` (to be added)
+📌 See: `tools/phase2_logger.py`
 
 ---
 
-## 🔐 OT Security Learning Goals
+## OT Security Learning Goals
 
 This testbed will evolve into a safe environment for experimenting with:
 
@@ -164,7 +164,7 @@ This mirrors real-world vulnerabilities found in building automation systems.
 
 ## License
 
-MIT License (or your preferred license)
+MIT License 
 
 ---
 
