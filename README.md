@@ -24,9 +24,37 @@ The goal is to create a hands-on platform for both HVAC controls learning and OT
 
 ```
 
-[ Sensors ] → Arduino Uno → JSON Telemetry → Pi Zero (logging/dashboard)  
-↓  
-Fan, Damper, LED Outputs
+                               ┌──────────────────────────────────────────┐
+                               │         Raspberry Pi Zero 2W             │
+                               │         (Central Controller / EMS)       │
+							   │                                          │
+							   │  - Collects sensor data from Uno         │
+							   │  - Receives wireless data from ESP32     │
+							   │  - Hosts web dashboard                   │
+                               │  - Publishes system state                │
+                               └──────────────▲───────────────┬───────────┘
+                                              │               │
+                                  Wired       │               │  WiFi / MQTT / HTTP
+                                  Connection  │               │  Wireless reports to Pi Zero 2W
+                                              │               │  (intentionally weak security for 
+                              ┌───────────────┘               │   red/blue team practice)
+                              │                               │
+ ┌────────────────────────────┴─────┐               ┌─────────┴─────────────────────────────┐
+ │          Arduino Uno             │               │               ESP32                   │
+ │      (Primary Sensor Node)       │               │     (Secondary Sensor Controller)     │
+ │                                  │               │                                       │
+ │  INPUTS:                         │               │  INPUTS:                              │
+ │   - 10k thermistor               │               │    - Photoresistor (daylight)         │
+ │   - CO2 sensor (T6613)           │               │    - Outdoor temp (thermistor)        │
+ │   - Humidity sensor              │               │                                       │
+ │   - PIR motion sensor            │               │                                       │
+ │                                  │               │  OUTPUTS (future optional):           │
+ │  OUTPUTS:                        │               │    - Status LED                       │
+ │   - PWM fan control              │               │                                       │
+ │   - Damper motor 1               │               └───────────────────────────────────────┘
+ │   - Damper motor 2 (servo)       │
+ │   - Occupied indicator LED       │
+ └──────────────────────────────────┘
 
 ````
 
