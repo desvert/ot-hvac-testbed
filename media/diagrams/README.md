@@ -1,0 +1,3 @@
+# Diagrams
+
+Store diagrams here.

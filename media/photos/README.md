@@ -1,0 +1,3 @@
+# Photos
+
+Store photos here.

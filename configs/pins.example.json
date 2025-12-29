@@ -1,0 +1,9 @@
+{
+  "thermistor_analog": "A0",
+  "pir_digital": 2,
+  "fan_pwm": 5,
+  "damper_servo": 9,
+  "occ_led": 13,
+  "t6613_rx": 10,
+  "t6613_tx": 11
+}

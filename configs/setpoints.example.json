@@ -1,0 +1,8 @@
+{
+  "cool_setpoint_f": 74.0,
+  "cool_deadband_f": 2.0,
+  "co2_low_ppm": 800,
+  "co2_med_ppm": 1200,
+  "occupied_hold_ms": 30000,
+  "sample_interval_ms": 5000
+}

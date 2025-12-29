@@ -1,0 +1,28 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Local config
+firmware/uno-controller/config.h
+
+# Logs
+logs/
+*.log
+*.jsonl
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# Drafts
+*.draft

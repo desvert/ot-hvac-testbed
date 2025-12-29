@@ -1,0 +1,6 @@
+{
+  "baud": 115200,
+  "wrap_utc_timestamp": true,
+  "output_dir": "logs",
+  "filename_pattern": "YYYYMMDD_HHMMSS_hvac.jsonl"
+}

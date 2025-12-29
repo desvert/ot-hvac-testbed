@@ -1,201 +1,169 @@
 # ot-hvac-testbed
 
-A miniature HVAC control system built on microcontrollers for learning building automation, embedded development, and OT security. The testbed simulates real HVAC behavior using temperature, humidity, CO₂, and occupancy inputs with fan and damper actuation outputs.
+A small HVAC testbed built to explore control logic, sensor integration, and telemetry from an operational technology perspective.
+
+An Arduino Uno acts as the primary controller and retains full authority over physical outputs. System state is emitted as structured JSON over serial and logged on a host system for analysis. The project is intentionally documented as it evolves, with an emphasis on clear control boundaries and safe default behavior.
 
 ---
 
-## Project Overview
+## High-level design
 
-This project recreates key components of a commercial HVAC control loop on the bench:
+The system is organized around explicit control boundaries.
 
-- **Arduino Uno** as the primary HVAC controller  
-- **Thermistor, BME280, and T6613 CO₂ sensor** for environmental inputs  
-- **PIR sensor** for occupancy detection  
-- **PWM fan control** through a MOSFET  
-- **Servo damper actuator** to simulate outside air control  
-- **Structured JSON telemetry** for logging and dashboards  
-- **Future integration** with a Pi Zero supervisor and ESP32 secondary sensor node  
+**Primary controller (Arduino Uno)**  
+- Owns the control loop and all actuator outputs  
+- Operates independently of any networked components  
+- Defaults to conservative behavior when sensor data is unavailable  
 
-The goal is to create a hands-on platform for both HVAC controls learning and OT cybersecurity experimentation.
+**Supervisor / host system (Linux, Raspberry Pi Zero 2W)**  
+- Collects telemetry and stores it for analysis  
+- Hosts dashboards and visualization tooling  
+- Does not participate in control decisions  
+
+**Future expansion (ESP32 secondary node)**  
+- Provides additional sensing and optional network telemetry  
+- Augments observability only  
+- Does not have authority over actuators  
+
+The Arduino Uno remains the final authority for physical outputs.
 
 ---
 
-## Architecture
+## Architecture (summary)
+
+Control authority and data flow are intentionally separated.
 
 ```
 
-                               ┌──────────────────────────────────────────┐
-                               │         Raspberry Pi Zero 2W             │
-                               │         (Central Controller / EMS)       │
-							   │                                          │
-							   │  - Collects sensor data from Uno         │
-							   │  - Receives wireless data from ESP32     │
-							   │  - Hosts web dashboard                   │
-                               │  - Publishes system state                │
-                               └──────────────▲───────────────┬───────────┘
-                                              │               │
-                                  Wired       │               │  WiFi / MQTT / HTTP
-                                  Connection  │               │  Wireless reports to Pi Zero 2W
-                                              │               │  (intentionally weak security for 
-                              ┌───────────────┘               │   red/blue team practice)
-                              │                               │
- ┌────────────────────────────┴─────┐               ┌─────────┴─────────────────────────────┐
- │          Arduino Uno             │               │               ESP32                   │
- │      (Primary Sensor Node)       │               │     (Secondary Sensor Controller)     │
- │                                  │               │                                       │
- │  INPUTS:                         │               │  INPUTS:                              │
- │   - 10k thermistor               │               │    - Photoresistor (daylight)         │
- │   - CO2 sensor (T6613)           │               │    - Outdoor temp (thermistor)        │
- │   - Humidity sensor              │               │                                       │
- │   - PIR motion sensor            │               │                                       │
- │                                  │               │  OUTPUTS (future optional):           │
- │  OUTPUTS:                        │               │    - Status LED                       │
- │   - PWM fan control              │               │                                       │
- │   - Damper motor 1               │               └───────────────────────────────────────┘
- │   - Damper motor 2 (servo)       │
- │   - Occupied indicator LED       │
- └──────────────────────────────────┘
+┌─────────────────────────────┐
+│  Supervisor / Host System   │
+│     (Pi Zero / Laptop)      │
+│                             │
+│  - Logs telemetry           │
+│  - Dashboards / analysis    │
+└────────────▲────────────────┘
+Serial / USB
+┌────────────┴────────────────┐
+│        Arduino Uno           │
+│  (Primary HVAC Controller)   │
+│                              │
+│ Sensors → Control → Outputs  │
+│                              │
+│  Fan / Damper / LED          │
+└────────────┬────────────────┘
+(future)
+Telemetry only
+┌────────────┴────────────────┐
+│           ESP32              │
+│    (Secondary Sensor Node)   │
+│                              │
+│   Additional sensing         │
+└─────────────────────────────┘
 
-````
+```
 
-Components:
+External systems observe system state but do not participate in control decisions.
 
-- **Sensors:** Thermistor, BME280, T6613 CO₂, PIR  
-- **Outputs:** Fan (PWM), Damper (servo), Occupancy LED  
-- **Future Node:** ESP32 secondary sensor module  
-- **Supervisor:** Pi Zero 2W for logging, analysis, and UI  
+A detailed breakdown is available in `docs/architecture.md`.
 
 ---
 
-## Control Logic Summary
-
-- Temperature (°F) drives fan speed  
-- CO₂ levels adjust damper position and minimum ventilation  
-- Occupancy includes a **30-second hold timer** after last motion  
-- Environmental data is streamed as structured JSON every 5 seconds  
-
----
-
-## Hardware Used
+## Hardware used
 
 - Arduino Uno  
-- IRLZ44N MOSFET + flyback diode (fan output)  
-- MG90S/SG90  servo (damper)  
 - BME280 (I²C)  
-- T6613 CO₂ module (UART)  
-- PIR sensor module  
-- 5V CPU fan  
-- Breadboard power module (3.3V / 5V rails)
+- 10k NTC thermistor (analog divider)  
+- T6613 CO₂ sensor (UART)  
+- PIR motion sensor  
+- IRLZ44N MOSFET with flyback diode (fan output)  
+- SG90 / MG90S servo (damper)  
+- 5V DC fan  
+- Breadboard power module (3.3V / 5V rails)  
+
+---
+
+## Control logic summary
+
+- Temperature (°F) determines fan duty cycle  
+- CO₂ concentration adjusts damper position and minimum ventilation  
+- Occupancy is derived from PIR motion with a 30-second hold timer  
+- When unoccupied, outputs return to idle defaults  
+- System state is emitted as structured JSON every 5 seconds  
+
+---
+
+## Repository layout
+
+```
+
+ot-hvac-testbed/
+├─ firmware/
+│  └─ uno-controller/        # Primary HVAC controller (Arduino Uno)
+├─ host/
+│  └─ logger/                # Python serial logger (JSONL)
+├─ docs/                     # Architecture, wiring, threat model
+├─ configs/                  # Example pin maps and setpoints
+├─ scripts/                  # Helper scripts
+└─ media/                    # Photos and diagrams
+
+```
 
 ---
 
 ## Firmware
 
-The primary controller firmware:
+The primary controller firmware is built using PlatformIO.
 
-- Reads all sensors  
-- Implements configurable setpoints  
-- Applies control logic  
-- Outputs JSON structured data  
-- Drives fan + damper + LED  
+Build:
+```
 
-📌 See: `firmware/primary_controller.ino`
+cd firmware/uno-controller
+pio run
 
----
+```
 
-## Telemetry Format (JSON)
+Upload:
+```
 
-Example output:
+pio run -t upload --upload-port /dev/ttyACM0
 
-```json
-{
-  "sensors": {
-    "thermistorF": 74.39,
-    "bmeTempF": 75.38,
-    "bmeHumidity": 34.22,
-    "co2ppm": 842,
-    "pir": true,
-    "indoorTempF": 75.38
-  },
-  "outputs": {
-    "fanDuty": 160,
-    "damper2Angle": 90,
-    "occupied": true
-  }
-}
-````
+```
 
 ---
 
-## Logging
+## Telemetry and logging
 
-A Python script is included for capturing serial JSON data to a `.jsonl` file.  
-This will feed into the Pi Zero dashboard in a later phase.
+The controller emits one JSON object per line over serial.  
+A Python logger is included to capture this data into `.jsonl` files for later analysis.
 
-📌 See: `tools/phase2_logger.py`
+See `host/logger/` for details.
 
 ---
 
-## OT Security Learning Goals
+## OT security learning goals
 
-This testbed will evolve into a safe environment for experimenting with:
+This testbed provides a safe environment for experimenting with:
 
-- Networked sensor data integrity
-- MQTT message spoofing / replay
-- Poorly secured embedded endpoints
-- Hardening microcontroller-based OT systems
-- Simulated ICS attack/defense scenarios
-    
+- Sensor data integrity and trust boundaries  
+- Replay and spoofing of telemetry streams  
+- Poorly secured embedded endpoints  
+- Hardening microcontroller-based OT systems  
+- Simulated building automation attack and defense scenarios  
 
-This mirrors real-world vulnerabilities found in building automation systems.
+These experiments mirror common weaknesses found in real-world building automation systems.
 
 ---
 
 ## Roadmap
 
-### Phase 1 — ✔ Thermistor + PWM Fan
-
-### Phase 2 — ✔ Primary HVAC Controller
-
-- Multi-sensor integration
-- Servo damper control
-- JSON telemetry
-- Occupancy hold logic
-    
-
-### Phase 3 — ⏳ Pi Zero Supervisor
-
-- Serial ingestion
-- Logging and graphing
-- Basic dashboard
-    
-
-### Phase 4 — ⏳ ESP32 Secondary Node
-
-- Wireless sensor inputs
-- MQTT integration
-    
-
-### Phase 5 — ⏳ OT Security Layer
-
-- Intentional weaknesses
-- Diagnostics and hardening
-- Attack simulation
-
----
-
-## Photos and Diagrams
-
-(Add wiring diagrams, breadboard layouts, and finished build photos here.)
+**Phase 1** – Thermistor and PWM fan control  
+**Phase 2** – Multi-sensor Uno controller with JSON telemetry  
+**Phase 3** – Supervisor logging and visualization (Pi Zero)  
+**Phase 4** – ESP32 secondary sensor node  
+**Phase 5** – OT security experiments and hardening  
 
 ---
 
 ## License
 
-MIT License 
-
----
-
-## Contributions
-
-This is a personal learning project, but PRs and suggestions are welcome!
+MIT

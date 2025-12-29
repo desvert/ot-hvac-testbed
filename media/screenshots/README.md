@@ -1,0 +1,3 @@
+# Screenshots
+
+Store screenshots here.
