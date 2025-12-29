@@ -42,22 +42,22 @@ Control authority and data flow are intentionally separated.
 │  - Logs telemetry           │
 │  - Dashboards / analysis    │
 └────────────▲────────────────┘
-Serial / USB
+       Serial / USB
 ┌────────────┴────────────────┐
-│        Arduino Uno           │
-│  (Primary HVAC Controller)   │
-│                              │
-│ Sensors → Control → Outputs  │
-│                              │
-│  Fan / Damper / LED          │
+│        Arduino Uno          │
+│  (Primary HVAC Controller)  │
+│                             │
+│ Sensors → Control → Outputs │
+│                             │
+│  Fan / Damper / LED         │
 └────────────┬────────────────┘
-(future)
-Telemetry only
+          (future)
+        Telemetry only
 ┌────────────┴────────────────┐
-│           ESP32              │
-│    (Secondary Sensor Node)   │
-│                              │
-│   Additional sensing         │
+│           ESP32             │
+│    (Secondary Sensor Node)  │
+│                             │
+│   Additional sensing        │
 └─────────────────────────────┘
 
 ```
